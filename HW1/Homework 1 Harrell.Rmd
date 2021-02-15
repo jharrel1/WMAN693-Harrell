@@ -1,0 +1,110 @@
+---
+title: "Homework 1 WMAN"
+author: "Jacob Harrell"
+date: "2/10/2021"
+output:
+  html_document: default
+---
+
+1. Import Data Set and Examine First Few Rows
+```{r}
+read.csv('beach.csv')
+
+```
+
+```{r}
+beach <- read.csv('beach.csv')
+head(beach)
+```
+
+2. Fit a model to include interactions between Year and BeachID. Report estimates of all Coefficients. 
+
+```{r}
+plot(beach$Year, beach$OpenBeach, xlab='year', ylab='ha')
+
+fit <- lm(formula= OpenBeach ~ Year * BeachID, data = beach)
+
+x_new <- seq(from = 1992, to = 2014, length.out = 100)
+y_new <- 36945.7-18.36491*x_new
+
+lines(x = x_new, y = y_new)
+
+```
+
+Linear Model : y = -18.36491x + 36945.7
+Coefficients:
+
+Intercept = 36945.73
+Year = -18.36491
+BeachIDB = -34211.98
+BeachIDC = -28776.11
+Year:BeachIDB = 17.04277
+Year:BeachIDC = 14.37132
+
+3. Predict the beach area at all three beaches in 1992. 
+
+```{r}
+x <- c(1992)
+y <- 36945.7 - 18.36491 * x
+```
+
+Using the linear model, we can predict that the open beach area across all three beaches in 1992 was 362.8 ha.
+
+4. Plot the predicted area of beach across all years.
+
+BeachA
+```{r}
+beachA <- read.csv(file = 'beachA.csv')
+
+plot(beachA$Year, beachA$OpenBeach, xlab='year', ylab='ha')
+
+fitA <- lm(formula = OpenBeach ~ Year, data = beachA)
+View(fitA)
+
+x_A <- seq(from = 1992, to = 2014, length.out = 100)
+y_A <- 36945.7-18.36491*x_A
+
+lines(x = x_A, y = y_A)
+
+```
+
+BeachB
+
+```{r}
+beachB <- read.csv(file='beachB.csv')
+
+plot(beachB$Year, beachB$OpenBeach, xlab='year', ylab='ha')
+
+fitB <- lm(formula = OpenBeach ~ Year, data = beachB)
+View(fitB)
+
+x_B <- seq(from = 1992, to = 2014, length.out = 100)
+y_B <- 2733.746-1.322145*x_B
+
+lines(x = x_B, y = y_B)
+
+```
+
+BeachC
+
+```{r}
+
+beachC <- read.csv(file='beachC.csv')
+
+plot(beachC$Year, beachC$OpenBeach, xlab='year', ylab='ha')
+
+fitC <- lm(formula = OpenBeach ~ Year, data = beachC)
+View(fitC)
+
+x_C <- seq(from = 1992, to = 2014, length.out = 100)
+y_C <- 8169.61-3.993592*x_C
+
+lines(x = x_C, y = y_C)
+
+```
+
+5. Interpret the rate of beach area change at each of the three beaches.
+
+The rate of change across each of the three beaches is -18.36491. That is, the amount of open beach area decreases by a rate of 18.36491 hectares per year. Taking a look at the rate of change across each beach individually, we find that beach A decreased at a rate of 18.36491 hectares per year, beach B decreased at a rate of 1.322145 hectares per year, and beach C decreased at a rate of 3.993592 hectares per year.
+
+
