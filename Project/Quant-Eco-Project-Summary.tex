@@ -1,0 +1,146 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+  \usepackage{amssymb}
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Quantitative Ecology Project Summary},
+  pdfauthor={Jacob Harrell},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifluatex
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\title{Quantitative Ecology Project Summary}
+\author{Jacob Harrell}
+\date{2/25/2021}
+
+\begin{document}
+\maketitle
+
+Background:
+
+Since its reintroduction back into the West Virginia landscape and the
+very first Spring Gobbler season, the West Virginia Division of Natural
+Resources has conducted a hunter survey each year for over 40
+years.Anywhere from between 200 to 800 hunters participate in the survey
+annually. This rather extensive data set has focused on hunter
+efficiency and success over the years with regards to wild turkey, but
+it has a huge potential to illustrate population dynamics throughout the
+years for wild turkey. The surveys are conducted throughout the state of
+West Virginia in every county, with some counties receiving more
+pressure than others.
+
+The data collected by the WVDNR includes data on:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Location surveyed and whether on private or public land
+\item
+  Dates surveyed
+\item
+  Hours surveyed for each day surveyed
+\item
+  Total number of turkey observed
+\item
+  Proportion of turkeys observed that were gobblers
+\item
+  Proportion of turkeys observed that were hens
+\item
+  Number of turkeys shot at
+\item
+  Number of turkeys harvested
+\item
+  General weather conditions for dates surveyed.
+\item
+  Number of observed gobblers that were adults
+\item
+  Number of observed gobblers that were juveniles
+\end{enumerate}
+
+In the case of this data, hours spent hunting and location being hunted
+would be the predictor variables that would determine whether turkeys
+were observed. The number of observed turkeys would be a response
+variable. Within the response variable.
+
+The primary objectives for this project would be to:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Create a model using the data to create a population index of turkey
+  within West Virginia.
+\item
+  Using the model, identify trends in population over the years.
+\item
+  If possible, based on the data, discern sex ratios in populations over
+  the years.
+\item
+  Using the model, be able to discern proportion of juvenile turkeys to
+  adult turkeys within the population from year to year and identify any
+  important trends.
+\end{enumerate}
+
+It may also be conceivable, depending on the data set, to determine
+population dynamics on a county level. However, certain counties may
+have less hunter participation than other counties and thus the data set
+might not be robust enough in some areas to model population on the
+county level.
+
+\end{document}

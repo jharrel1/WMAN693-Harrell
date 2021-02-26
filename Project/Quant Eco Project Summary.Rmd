@@ -1,0 +1,36 @@
+---
+title: "Quantitative Ecology Project Summary"
+author: "Jacob Harrell"
+date: "2/25/2021"
+output:  word_document
+---
+
+Background:
+
+Since its reintroduction back into the West Virginia landscape and the very first Spring Gobbler season, the West Virginia Division of Natural Resources has conducted a hunter survey each year for over 40 years.Anywhere from between 200 to 800 hunters participate in the survey annually. This rather extensive data set has focused on hunter efficiency and success over the years with regards to wild turkey, but it has a huge potential to illustrate population dynamics throughout the years for wild turkey. The surveys are conducted throughout the state of West Virginia in every county, with some counties receiving more pressure than others.   
+
+ The data collected by the WVDNR includes data on:
+ 
+  1. Location surveyed and whether on private or public land
+  2. Dates surveyed
+  3. Hours surveyed for each day surveyed
+  4. Total number of turkey observed
+  5. Proportion of turkeys observed that were gobblers
+  6. Proportion of turkeys observed that were hens
+  7. Number of turkeys shot at
+  8. Number of turkeys harvested
+  9. General weather conditions for dates surveyed.
+  10. Number of observed gobblers that were adults
+  11. Number of observed gobblers that were juveniles
+ 
+ In the case of this data, hours spent hunting and location being hunted would be the predictor variables that would determine whether turkeys were observed. 
+ The number of observed turkeys would be a response variable. Within the response variable. 
+ 
+ The primary objectives for this project would be to:
+ 
+  1. Create a model using the data to create a population index of turkey within West Virginia.
+  2. Using the model, identify trends in population over the years.
+  3. If possible, based on the data, discern sex ratios in populations over the years. 
+  4. Using the model, be able to discern proportion of juvenile turkeys to adult turkeys within the population from year to year and identify any important trends. 
+ 
+ It may also be conceivable, depending on the data set, to determine population dynamics on a county level. However, certain counties may have less hunter participation than other counties and thus the data set might not be robust enough in some areas to model population on the county level. 
