@@ -1,0 +1,131 @@
+---
+title: "Homework 3"
+author: "Jacob Harrell"
+date: "3/3/2021"
+output: html_document
+---
+
+<b>Question 1</b>
+
+The dataset, as provided, includes the following variables:
+
+  1. y : this is the response variable wherein 1 represents a success and 0 represents a failure
+  2. x1 : this is a continuous predictor variable
+  3. x2 : this is a categorical variable represented as either 'a' or 'b'
+
+We can fit a logistic regression model to this data with the assumption that the probability of success is an additive function of both x1 and x2. It would look something like this:
+
+```{r}
+#setwd(choose.dir('hw3.csv'))
+hw3<-read.csv(file='hw3.csv')
+
+fit<- glm(y~x1+x2, family = binomial, data = hw3)
+summary(fit)
+
+```
+
+<b>Question 2</b>
+
+To begin to interpret the effect of variable x1 on the log of success, we can first rewrite the linear model by plugging in the various coefficients, like so:
+
+y[i] = 0.5948 - 0.1680 * x1 - 0.9679 * x2
+
+Here, the value -.1680 refers to the ratio of log odds for success with relation to variable x1.
+
+This can be verified through r by evaluating the log odds ratio of a 1-unit change within x1.
+
+```{r}
+beta<- coef(fit)
+beta
+
+p_1<-plogis(beta[1]+beta[2]*1)
+p_1
+
+p_2<-plogis(beta[1]+beta[2]*2)
+p_2
+
+log((p_2/(1-p_2))/(p_1/(1-p_1)))
+
+```
+From this, we can see that the slope coefficient for x1 is negatively related with the value of x1 and we thus have a lower probability of success as the value of x1 increases. 
+
+<b>Question 3</b>
+
+The effects of variable x2 on the logs of success can be interpreted in a similar manner x1. This time, however, the variable x2 is a categorical variable.
+
+The slope coefficient -.9679 represents the log odds ratio of a point being of type 'a' relative to a point being of type 'b'. 
+
+And so, to verify this using r:
+
+```{r}
+p_b<-plogis(beta[1]+beta[3])
+p_b
+
+p_a<-plogis(beta[1])
+p_a
+
+log((p_b/(1-p_b))/(p_a/(1-p_a)))
+
+```
+Once again, the slope coefficient of x2 is negatively related to the variable x2. Thus, there is a higher probability of success when the point falls within 'a' than when the point falls within 'b'.
+
+<b>Question 4</b>
+
+The variable x1 will be examined first for the Wald Test and p-value.
+
+```{r}
+#Wald Test
+ts1<-beta[2]/summary(fit)[['coefficients']]['x1', 'Std. Error']
+ts1
+
+#And to compare with the fitted model...
+summary(fit)[['coefficients']]['x1','z value']
+
+#And now, the p-value associated with x1...
+px1<-2*pnorm(-1*abs(ts1), mean=0, sd=1)
+px1
+
+#And to compare with the fitted model...
+summary(fit)[['coefficients']]['x1', 'Pr(>|z|)']
+
+```
+The same procedure can be conducted for variable x2.
+
+```{r}
+#Wald Test
+ts2<-beta[3]/summary(fit)[['coefficients']]['x2b', 'Std. Error']
+ts2
+
+#And to compare with the fitted model...
+summary(fit)[['coefficients']]['x2b','z value']
+
+#And now, the p-value associated with x2...
+px2<-2*pnorm(-1*abs(ts2), mean=0, sd=1)
+px2
+
+#And to compare with the fitted model...
+summary(fit)[['coefficients']]['x2b', 'Pr(>|z|)']
+
+```
+In both of these instances, the p-value is within a range of a reasonable 'alpha'. Therefore, we would fail to reject the null hypothesis. 
+
+<b>Question 5</b>
+
+And now, predicting and plotting the mean probability of success over a range of values for x1.
+
+```{r}
+y<-beta[1]+beta[2]*mean(hw3$x1)+beta[3]
+
+#Mean probability of success
+exp(y)/(1+exp(y))
+
+```
+
+```{r}
+x1<-seq(from=min(hw3$x1), to=max(hw3$x1), length.out=100)
+y<-beta[1]+beta[2]*x1+beta[3]
+
+plot(x=x1, y=plogis(y), ylab='probability of success', xlab='x1', cex.axis=1.5, cex.lab=1.5, type='l')
+
+```
+
