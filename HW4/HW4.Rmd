@@ -1,0 +1,112 @@
+---
+title: "Homework 4"
+author: "Jacob Harrell"
+date: "3/16/2021"
+output: html_document
+---
+
+<b> Question #1 </b>
+
+The dataset, as provided, includes the following variables:
+
+  1. y : This is the response variable representing counts of the number of events. 
+  2. x1 : This is a continuous predictor variable.
+  3. x2 : This is a categorical predictor variable represented as either 'a' or 'b'.
+  
+We can fit a Poisson regression model to this data under the assumption that the expected count is an interactive function of variables x1 and x2. It would look something like this:
+
+```{r}
+#setwd(choose.dir('HW4.csv'))
+hw4<-read.csv(file = 'HW4.csv')
+
+fit<-glm(y~x1+x2, family = poisson, data = hw4)
+summary(fit)
+
+```
+
+<b>Question #2</b>
+
+To begin to interpret the effect of variable x1 on the expected count when x2 is fixed at level 'b', we can rewrite the model by plugging in the various coefficients, like so:
+
+$$
+y_i = 1.89157 + .02645 * x1 - 1.06237 * x2
+$$
+Here, the value .02645 refers to the log proportional change in the expected count associated with a one-unit change in x1. 
+
+We can thus verify this in r by evaluating the log proportional change in the expected count of a one-unit change in x1, like so:
+
+```{r}
+beta<-coef(fit)
+beta
+
+c_1<- beta[1]+beta[2]*1+beta[3]
+c_1
+
+c_2<- beta[1]+beta[2]*2+beta[3]
+c_2
+
+log(exp(c_2)/exp(c_1))
+```
+From this, we can see that the slope coefficient for x1 is positively related with the value of x1. We can further exponentiate the the slope coefficient, like so :
+
+```{r}
+exp(beta[2])
+```
+And from this exponentiation we can determine that for each one unit increase in X1, there will be an approximately 2.68% increase in the expected count. 
+
+<b> Question 3 </b>
+
+Interpreting the effects of x2 on the expected count when x1 is fixed at 1 can be accomplished utilizing similar methods as before.The primary difference here, though, is that x2 is a categorical variable. As such, the slope coefficient of -1.06237 would represent the log proportional change in the expected counts established through category 'a' with respect to the expected counts established through category 'b'. 
+
+To verify through r:
+
+```{r}
+c_a <- beta[1]+beta[2]+beta[3]*0
+c_a
+
+c_b <- beta[1]+beta[2]+beta[3]*1
+c_b
+
+log(exp(c_b)/exp(c_a))
+
+#and now, compared to the coefficient
+beta[3]
+
+#and for further interpretation
+(exp(beta[3])-1)*100
+```
+Here, we can see that the slope coefficient for x2 is negatively related to the categorical variable x2.It can thus be interpreted that the expected count decreases by approximately 65.44% when moving from level 'a' to level 'b'.
+
+<b>Question #4</b>
+
+We can now predict counts, using 95% confidence intervals, over the observed range of x1 when x2 is fixed at category 'b'. 
+
+```{r}
+newdat<-data.frame( x1 = seq(min(hw4$x1), max(hw4$x1), length.out = 100), x2 = factor(x = rep('b', times = 100), levels = c('a', 'b')))
+
+prd<-predict.glm(object = fit, newdata = newdat, type = 'link', se.fit = T)
+low<-prd$fit-qnorm(.975)*prd$se.fit
+high<-prd$fit+qnorm(.975)*prd$se.fit
+
+plot(y=exp(prd$fit), x=newdat$x1, ylab = 'Expected Count', xlab = 'x1', cex.axis = 1.5, cex.lab = 1.5, type = 'l', ylim = c(min(exp(low)), max(exp(high))))
+lines(x = newdat$x1, y = exp(low), lty = 2)
+lines(x = newdat$x1, y = exp(high), lty = 2)
+
+```
+The above graph illustrates the predicted expected count over the range of observed x1 values when the categorical value is set at 'b'.
+
+<b>Question #5</b>
+Similarly, we can predict counts, using the 95% confidence interval, of levels 'a' and 'b' when the x1 is fixed at its mean.
+
+```{r}
+newdat1<-data.frame( x1 = mean(hw4$x1), x2 = factor(c('a','b')))
+
+prd<-predict.glm(object = fit, newdata = newdat1, type = 'link', se.fit = T)
+low<-prd$fit-qnorm(.975)*prd$se.fit
+high<-prd$fit+qnorm(.975)*prd$se.fit
+
+plot(y=exp(prd$fit), x=newdat1$x2, ylab = 'Expected Count', xlab = '', cex.axis = 1.5, cex.lab = 1.5, type = 'l', ylim = c(min(exp(low)), max(exp(high))))
+axis(side = 1, at = c(1, 2), labels = c('a', 'b'))
+lines(x = newdat1$x1, y = exp(low), lty = 2)
+lines(x = newdat1$x1, y = exp(high), lty = 2)
+```
