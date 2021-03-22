@@ -1,0 +1,116 @@
+---
+title: "Exam II"
+author: "Jacob Harrell"
+date: "3/22/2021"
+output: html_document
+---
+
+<b>Question 1</b>
+
+Import dataset into r and examine the first few rows of data
+
+```{r}
+#setwd(choose.dir('Exam2.csv'))
+exam <- read.csv(file = 'Exam2.csv')
+
+head(exam)
+
+```
+
+<b>Question 2</b>
+
+Fit a Poisson Model assuming response is a function of x1, x2, and x3. Include an interaction between x1 and x2 only. 
+
+```{r}
+fit<-glm(y~x1*x2+x3, family = poisson, data = exam)
+summary(fit)
+
+```
+
+<b>Question 3</b>
+
+Interpret the effect of variable x1 when x2 = -1.
+
+```{r}
+beta<-coef(fit)
+beta[2]+beta[6]*1
+
+```
+This demonstrates that the slope coefficient for X1 is negatively related to x2.Thus, for every one unit change in x2, the log proportional change in x1 is -1.323587.
+
+<b>Question 4</b>
+Plot counts at +/-90% CI over the observed range of x1.assume variable x2=-1 and category is 'a'
+
+```{r}
+newdat<-data.frame( x1 = seq(min(exam$x1), max(exam$x1), length.out = 100), x2 = -1, x3 = factor(x = rep('a', times = 100), levels = c('a', 'b', 'c')))
+
+prd<-predict.glm(object = fit, newdata = newdat, type = 'link', se.fit = T)
+low<-prd$fit-qnorm(.975)*prd$se.fit
+high<-prd$fit+qnorm(.975)*prd$se.fit
+
+plot(y=exp(prd$fit), x=newdat$x1, ylab = 'Expected Count', xlab = 'x1', cex.axis = 1.5, cex.lab = 1.5, type = 'l', ylim = c(min(exp(low)), max(exp(high))))
+lines(x = newdat$x1, y = exp(low), lty = 2)
+lines(x = newdat$x1, y = exp(high), lty = 2)
+
+```
+
+<b>Question 5</b>
+Interpret the effect of variable x3. 
+```{r}
+(exp(beta[4])-1)*100
+(exp(beta[5])-1)*100
+
+```
+
+The slope coefficient for X3 is positively related to the categorical variable of x3 when moving from level 'a' to level 'b', but negatively related when moving from level 'a' to level 'c'. The expected count increases by approximately 45.55% when moving from level 'a' to level 'b' and the expected count decreases by approximately 58.67% when moving from level 'a' to level 'c'.
+
+
+<b>Question 6</b>
+Use contrasts to evaluate null hypothesis that difference in log expected counts between 'b' and 'c' is 0.
+fix x1 and x2 to their means.
+
+```{r}
+#install.packages('multcomp')
+library(multcomp)
+
+m<-matrix(c(0,0,0,1,-1,0),nrow=1)
+cntr<- glht(model = fit, m)
+cntr
+summary(cntr)
+```
+we would reject the null hypothesis that the difference in log expected counts between 'b' and 'c' = 0 since the associated p-value is so small.
+
+<b>Question 7</b>
+Derive the test statistic and p-value associated with the interaction between x1 and x2. 
+
+```{r}
+s<-summary(fit)[['coefficients']][,2]
+ts<-beta[6]/s
+ts
+
+pst<-pnorm(-1*abs(ts))*2
+pst
+```
+The null hypothesis is that the change between x1 and x2 is equal to 0. In other words beta[6]=0. We would reject the null hypothesis since the associated p-value is insignificantly small. 
+
+<b>Question 8</b>
+
+```{r}
+y<-c(0,1)
+lik<-function(p,y){
+  sum(dbinom(y, size =1, prob = p, log = -2))
+}
+
+p<-seq(from=0, to=1, length.out = 100)
+ll<-numeric(100)
+for(i in 1:100){
+  ll[i]<-lik(p[i], y)
+}
+
+plot(x=p, y=ll, ylab='log likelihood', xlab = 'p', cex.axis = 1.5, cex.lab = 1.5, type = 'l')
+```
+<b>Question 9</b>
+the support of a Bernoulli random variable is that Y={0,1} and so the expected values for Y are either 0 or 1.We would apply the link function to the quantity 1 which would represent a positive success in detection of presence/absence. the principle link function that we use is the Logit link function in order to bind a real number between 0 and 1. The inverse of such 
+<b>Question 10</b>
+
+the fundamental assumption made in deriving inference when comparing two levels of a categorical random variable is that 
