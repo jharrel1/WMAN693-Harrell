@@ -1,0 +1,98 @@
+---
+title: "Homework 5"
+author: "Jacob Harrell"
+date: "3/30/2021"
+output: html_document
+---
+```{r, echo=FALSE}
+knitr::opts_chunk$set(error = TRUE)
+```
+
+<b>Question 1</b>
+
+First load the data and then place into an unmarkedFrameOccu object.
+
+```{r}
+setwd("C:/Users/Jacob/Desktop/HW5")
+bob<-read.csv(file = 'Bobcat.csv')
+
+library(unmarked)
+
+bob_mat <- as.matrix(bob)
+occu_data <- unmarkedFrameOccu(y = bob_mat)
+```
+
+<b>Question 2</b>
+
+Fit an occupancy model with the assumption that conditional detection probability is a function of the number of people photographed at a site and that the occupancy probability is a function of disturbances within 5 km of a site. 
+
+```{r}
+p_covs <- read.csv("p covariates.csv")
+
+det_covs <- list(people = data.frame(p_covs))
+
+site_covs <- read.csv('psi covariates.csv')
+
+occu_data2 <- unmarkedFrameOccu(y = bob_mat, siteCovs = site_covs, obsCovs = det_covs)
+fit <- occu(formula = ~ people ~ Dist_5km, data = occu_data2)
+summary(fit)
+```
+
+<b>Question 3</b>
+
+Interpret the effect of the number of people photographed at each site on the conditional detection probability of bobcat. Verify through r.
+
+
+```{r}
+betas <- coef(fit)
+betas
+
+p_1 <- plogis(betas[3]+betas[4]*1)
+p_1
+p_2 <- plogis(betas[3]+betas[4]*2)
+p_2
+
+log((p_2/(1-p_2))/(p_1/(1-p_1)))
+
+```
+For every one unit change within the variable 'people', the log odds of success of detecting a bobcat decreases by .0609. 
+
+<b>Question 4</b>
+
+Re-create the Wald test for the effect of disturbance within 5 km. Define the null hypothesis and note whether we would reject it or fail to reject it. 
+
+```{r}
+
+disturb <- -23.64 / 4.773 #coefficient for dist_5km divided by its standard error
+disturb
+
+2 * pnorm(-1 * abs(disturb))
+```
+The null hypothesis, plainly stated, is that the log odds of success of detecting a bobcat at a site would not differ depending on the proportion of the site area within 5km of a recently disturbed area. Based on the results of the Wald Test, we would reject the null hypothesis. 
+
+<b>Question 5</b>
+
+Predict and plot the effect of disturbance within 5 km on bobcat occupancy probability over the range of observed disturbance within 5 km. 
+
+```{r}
+new_psi <- data.frame(Dist_5km = seq(from = min(site_covs$Dist_5km),
+                                to = max(site_covs$Dist_5km),
+                                length.out = 100)
+)
+
+prd <- predict(object = fit, newdata = new_psi, type = 'state')
+head(prd)
+```
+
+```{r}
+
+plot(y= prd$Predicted, x = new_psi$Dist_5km, 
+     ylab = 'Bobcat Occupancy Probability', 
+     xlab = 'range of observed disturbance over 5km area',
+     cex.axis = 1.5,
+     cex.lab = 1.5,
+     type = 'l')
+lines(y = prd$lower, x = new_psi$Dist_5km, lty = 2)
+lines(y = prd$upper, x = new_psi$Dist_5km, lty = 2)
+```
+
