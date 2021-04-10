@@ -1,0 +1,52 @@
+---
+title: "Assessing Trends in Wild Turkey Populations Using Hunter Surveys"
+author: "Jacob Harrell"
+date: "4/9/2021"
+output: pdf_document
+---
+
+**INTRODUCTION**
+
+Since being re-established within the state, the West Virginia Division of Natural REsources (WVDNR) has conducted an annual hunter survey to coincide with the Spring Gobbler Harvest. The WVDNR uses this data primarily to gage harvest totalswith respect to hunter satisfaction. I was curious about what trends may exist within the data. The overall objective of this report is to assess the hunter survey data for any trends in wild turkey populations observed across the state. 
+
+**STUDY AREA**
+
+The full scope of the study encompassed each of the 55 counties of West Virginia. These 55 counties spanned across six different eco-regions. All participants of the survey hunted on private property throughout the state. Most hunters hunted in one county, but there were a number of hunters that hunted in more than one county. 
+
+**STATISTICAL MODEL DESCRIPTION**
+
+Considering the nature of the data, it lent itself quite well to be fitted within a poisson distribution model. The total number of turkeys called in during a hunt constituted the response variable. Expected counts of turkeys per hunting visit were modeled as a function of two distinct predictor variable : temperature and ecoregion. Other predictor variables had been tested, such as hours spent in woods, private versus public lands, and weather, but these two variables seemed the most appropriate given their relatively low AIC value when modeled. An offset was applied to the model using the hours spent in the woods hunting. 
+
+```{r}
+
+
+#setwd(choose.dir('Gobbler'))
+SG2019 <- read.csv('2019SGRaw.csv')
+
+#Setting up a model for total turkeys using an offset
+thouroff <- log(SG2019$Hours) #setting hours as an offset
+SG2019$Temp <- factor(SG2019$Temp, levels = c('1', '2', '3', '4')) #setting the categorical variable as a factor
+SG2019$Region <- factor(SG2019$Region, levels = c('1', '2', '3', '4', '5', '6')) #setting the categorical variable 'regions' as a factor
+tfitoff <- glm(TotCalled ~ Temp + Region,
+              family = poisson,
+              data = SG2019,
+              offset = thouroff) #poisson model where total number of turkeys called in is a function of temperature and ecoregion
+summary(tfitoff)
+
+#setting up a data frame for predicted values
+TOnd <- data.frame(
+  Temp = factor(c('1'), levels = c('1', '2', '3', '4')),
+  Region = factor(SG2019$Region),
+  thouroff = rep(log(1)))
+toprd <- predict.glm(object = tfitoff, newdata = TOnd, type = 'link', se.fit = T)
+summary(toprd)
+
+#setting up confidence intervals
+tolow <- exp(toprd$fit - qnorm(0.975) * toprd$se.fit)
+tohigh <- exp(toprd$fit + qnorm(0.975) * toprd$se.fit)
+
+#plotting the expected count per hunting trip between ecoregions when morning temperatures are below 30 degrees fahrenheit   
+plot(y = exp(toprd$fit), x = TOnd$Region, xlab = 'Region',
+     ylab = 'Expected Count', cex.axis = 1.5, cex.lab = 1.5,
+     ylim = c(min(tolow), max(tohigh)), type = 'l'); points(x=TOnd$Region, y = tohigh, lty = 2, pch = 6); points(x=TOnd$Region, y = tolow, lty = 2, pch = 2)
+```
