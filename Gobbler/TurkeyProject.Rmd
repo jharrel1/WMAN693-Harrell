@@ -2,37 +2,46 @@
 title: "Assessing Trends in Wild Turkey Populations Using Hunter Surveys"
 author: "Jacob Harrell"
 date: "4/9/2021"
+header-includes:
+  - \usepackage{setspace}\doublespacing
 output: pdf_document
+indent: TRUE
 ---
 
 **INTRODUCTION**
 
-Since being re-established within the state, the West Virginia Division of Natural REsources (WVDNR) has conducted an annual hunter survey to coincide with the Spring Gobbler Harvest. The WVDNR uses this data primarily to gage harvest totalswith respect to hunter satisfaction. I was curious about what trends may exist within the data. The overall objective of this report is to assess the hunter survey data for any trends in wild turkey populations observed across the state. 
+   Once extirpated from the region, the wild turkey (*Melaeagris gallopavo*) has enjoyed a healthy return to the state thanks to efforts by the West Virginia Division of Natural Resources (WVDNR) in collaboration with other states. Since being re-established, the WVDNR has conducted an annual hunter survey to coincide with the Spring Gobbler Harvest. The WVDNR uses this data primarily to gage harvest totals with respect to hunter satisfaction. Very little analysis of the data has ever been accomplished. With such a robust set of data, I was curious about what trends may exist. I examined data from the 2019 Spring Gobbler Harvest for any differences in populations and general observations made by hunters. The focus of this report is on the differences in hunter observations of wild turkey across the differing ecoregions with respect to time spent hunting and early morning temperature during days spent hunting. I hypothesis that there will be statistical differences in populations between ecoregions and that temperature will play a critical role in the number of observations to occur per hunting trip. 
 
 **STUDY AREA**
 
-The full scope of the study encompassed each of the 55 counties of West Virginia. These 55 counties spanned across six different eco-regions. All participants of the survey hunted on private property throughout the state. Most hunters hunted in one county, but there were a number of hunters that hunted in more than one county. 
+   The full scope of the study encompassed each of the 55 counties of West Virginia. These 55 counties spanned across six different eco-regions (Appalachian Ridge and Valley, Allegheny Plateau, Cumberland Mountains, Monongahela and Upper Ohio, Northern Ohio/West Virginia Hills, Southern Ohio/West Virginia Hills). In 2019, there were 660 turkey hunters that participated in the Spring Gobbler Harvest Survey. All participants of the survey hunted exclusively on private property throughout the state. Most hunters hunted in one county, but there were a number of hunters that hunted in more than one county. The 2019 Spring Gobbler hunt began on 4/13/2019 and lasted until 5/11/2019 for a total of 28 days. 
+
+**DECSRIPTION OF DATA**
+
+   Hunters that choose to participate in the study are asked to fill out a survey form at the completion of the Spring Gobbler season and to submit that form to the WVDNR. The data of each individual hunt is recorded along with the hours spent in the woods actively hunting for turkey. Location data for each hunt is recorded to include county and whether the hunt occurred on private or public land. Using the county location data, the WVDNR is able to then categorize the hunt by district and by ecoregion. Weather conditions to include temperature (>70, 50-69, 30-49, <30), cloud cover and precipitation are recorded for each hunt. Observation data is recorded for gobblers, jakes, and hens. The observation data is separated by gobblers seen while walking to or from hunting location, gobblers heard during the hunt, male turkeys called in during the hunt (further differentiated between adult gobblers and juvenile Jakes), hens seen walking to and from the hunting area, and hens called in during the hunt. Harvest data is also collected to include the number of turkeys shot at and the number of turkeys successfully harvested. Through the 660 participating hunters in the 2019 survey, data was collected on 5307 individual hunting events.    
 
 **STATISTICAL MODEL DESCRIPTION**
 
-Considering the nature of the data, it lent itself quite well to be fitted within a poisson distribution model. The total number of turkeys called in during a hunt constituted the response variable. Expected counts of turkeys per hunting visit were modeled as a function of two distinct predictor variable : temperature and ecoregion. Other predictor variables had been tested, such as hours spent in woods, private versus public lands, and weather, but these two variables seemed the most appropriate given their relatively low AIC value when modeled. An offset was applied to the model using the hours spent in the woods hunting. 
+   Considering the nature of the data, it lent itself quite well to be fitted within a poisson distribution model. I generated a poisson distribution using the glm() function in r markdown for this report. The total number of turkeys called in during a hunt constituted the response variable. Expected counts of turkeys per hunting visit were modeled as a function of two distinct predictor variable : temperature and ecoregion. Other predictor variables had been tested, such as hours spent in woods, private versus public lands, and weather, but temperature and ecoregion seemed the most appropriate given their relatively low AIC value when modeled. An offset was applied to the model using the hours spent in the woods hunting. 
 
+**MODEL CODE**
+
+   The code generated in r markdown is, as follows:
 ```{r}
-
-
 #setwd(choose.dir('Gobbler'))
 SG2019 <- read.csv('2019SGRaw.csv')
 
 #Setting up a model for total turkeys using an offset
 thouroff <- log(SG2019$Hours) #setting hours as an offset
-SG2019$Temp <- factor(SG2019$Temp, levels = c('1', '2', '3', '4')) #setting the categorical variable as a factor
-SG2019$Region <- factor(SG2019$Region, levels = c('1', '2', '3', '4', '5', '6')) #setting the categorical variable 'regions' as a factor
+SG2019$Temp <- factor(SG2019$Temp, levels = c('1', '2', '3', '4')) #setting the
+#categorical variable as a factor
+SG2019$Region <- factor(SG2019$Region, levels = c('1', '2', '3', '4', '5', '6'))
+#setting the categorical variable 'regions' as a factor
 tfitoff <- glm(TotCalled ~ Temp + Region,
               family = poisson,
               data = SG2019,
-              offset = thouroff) #poisson model where total number of turkeys called in is a function of temperature and ecoregion
-summary(tfitoff)
-
+              offset = thouroff) #poisson model where total number of turkeys
+#called in is a function of temperature and ecoregion
 #setting up a data frame for predicted values
 TOnd <- data.frame(
   Temp = factor(c('1'), levels = c('1', '2', '3', '4')),
@@ -44,9 +53,29 @@ summary(toprd)
 #setting up confidence intervals
 tolow <- exp(toprd$fit - qnorm(0.975) * toprd$se.fit)
 tohigh <- exp(toprd$fit + qnorm(0.975) * toprd$se.fit)
+```
 
+```{r region-plot, dev='png', fig.show = 'hide'}
 #plotting the expected count per hunting trip between ecoregions when morning temperatures are below 30 degrees fahrenheit   
 plot(y = exp(toprd$fit), x = TOnd$Region, xlab = 'Region',
      ylab = 'Expected Count', cex.axis = 1.5, cex.lab = 1.5,
      ylim = c(min(tolow), max(tohigh)), type = 'l'); points(x=TOnd$Region, y = tohigh, lty = 2, pch = 6); points(x=TOnd$Region, y = tolow, lty = 2, pch = 2)
 ```
+**RESULTS**
+
+The expected count of wild turkey perhunting trip was highest within ecoregion 4(Mon and Upper Ohio) (figure 1). The log proportional change in expected counts established through ecoregion 1 with respect to the expected counts as established in ecoregion 4 was 0.6928202 (table 1), the highest log proportional change between any ecoregion. In other words, there was a 73.55% increase in the expected count when moving from ecoregion 1 to ecoregion 4. This is indicative that a robust population of wild turkey exists within ecoregion 4, with respect to the other ecoregions. 
+
+The expected count of wild turkey per hunting trip was lowest within ecoregion 2 (Allegheny Plateau). The log proportional change in expected counts established through ecoregion 1 with respect to the expected counts as established within ecoregion 2 was -0.2723799. This represented a decrease of 28.02% in the expected count when moving from ecoregion 1 to ecoregion 2. The reasons for the lower expected counts of wild turkey was not a subject of this analysis. 
+
+```{r echo = FALSE, results = 'asis'}
+library(knitr)
+kable(tfitoff[1], caption = 'Table 1 - Slope coefficients')
+```
+
+
+![Plot of expected counts of wild turkeys per hunting trip by ecoregion](`r knitr::fig_chunk('region-plot', 'png')`)
+
+The p-values associated with each ecoregion were exceptionally small indicating that a significant statistical difference exists between each ecoregion. In every instance, we would reject the null hypothesis that there is no significant differences between ecoregions. 
+
+
+
