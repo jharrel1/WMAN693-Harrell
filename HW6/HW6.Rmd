@@ -1,0 +1,109 @@
+---
+title: "Homework 6"
+author: "Jacob Harrell"
+date: "4/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**QUESTION 1**
+
+Load data and place within a, unmarkedFramePCount object.
+
+```{r}
+#setwd(choose.dir('HW6'))
+library(unmarked)
+y <- read.csv('count.csv')
+
+count_mat <- as.matrix(y)
+
+obs_c <- read.csv('obs_covs.csv')
+det_covs <- list(
+  j = data.frame(obs_c[,c('j1', 'j2', 'j3')])
+)
+site_covs <- read.csv('site_covs.csv')
+site_covs$x2 <- factor(site_covs$x2)
+
+count_data <- unmarkedFramePCount(y = count_mat,
+                                  obsCovs = det_covs,
+                                  siteCovs = site_covs)
+```
+
+**QUESTION 2**
+
+With the data placed within an unmarkedFramPCount object, we can now fit the data into an N-mixture model under the assumption that the conditional detection probability is a function of the provided detection covariate, and that the expected abundance is an additive function of variable x1 and x2.
+
+```{r}
+fit <- pcount(formula = ~ j ~ x1 + x2,
+              data = count_data,
+              K = 100)
+summary(fit)
+```
+
+**QUESTION 3**
+
+Now, to interpret the effect x1 would have on the expected count at each site. 
+
+```{r}
+betas <- coef(fit)
+betas
+
+p_sub <- plogis(betas[6] +betas[2])
+p_non <- plogis(betas[6])
+log((p_sub/(1-p_sub))/(p_non/(1-p_non)))
+
+```
+For every one unit change within the variable 'x1', the log odds of success for detection increases by 0.3696. 
+
+**QUESTION 4**
+
+```{r}
+new_det <- data.frame(
+  j = c(det_covs['j1'], det_covs['j2'], det_covs['j3'])
+)
+j <- mean(unlist(data.frame(c(obs_c['j1'], obs_c['j2'], obs_c['j3']))))
+prd_det <- predict(object = fit,
+                   newdata = new_det,
+                   type = 'det')
+prd_det
+plot(x = c(0,0), 
+     y = prd_det[1, c('lower', 'upper')],
+     #xlim = c(-0.5, 2.5),
+     ylim = c(0, max(prd_det[,'upper'])),
+     ylab = 'Detection Probability',
+     xlab = '',
+     xaxt = 'n',
+     cex.axis = 1.5,
+     cex.lab = 1.5,
+     type = 'l',
+     lwd = 3
+     ); #lines(x = c(1, 1), y = prd_det[2, c('lower', 'upper')],
+#lwd = 3); lines(x = c(2, 2), y = prd_det[3, c('lower', 'upper')],
+#lwd = 3); axis(side = 1, at = 0:3, cex.axis = 1.5) ;labels = c('j1', 'j2', 'j3')
+#points(x = 0:2, y = prd_det[, 'Predicted'], cex = 3, pch = 16)
+
+```
+
+**QUESTION 5**
+
+```{r}
+x<- matrix(
+  c(0, 0, 1, -1, 0,
+    0, 0, 1, 0, -1,
+    0, 0, 0, 1, -1),
+  nrow = 3,
+  byrow = T
+)
+lin_com <- linearComb(obj = fit, 
+                      coefficients = x,
+                      type = 'state')
+
+wald_test <- coef(lin_com)/SE(lin_com)
+wald_test
+
+2 * pnorm(-1 * abs(wald_test))
+```
+We would fail to reject the null hypothesis that there is no change in expected abundance between x2b and x2c. We would reject the null hypothesis when comparing x2b with x2d and x2c with x2d.
