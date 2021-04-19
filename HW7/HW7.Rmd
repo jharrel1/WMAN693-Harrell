@@ -1,0 +1,156 @@
+---
+title: "HW 7"
+author: "Jacob Harrell"
+date: "4/18/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+**Question 1**
+
+Place the data into unmarkedFrameOccu objects.
+
+```{r}
+#setwd(choose.dir('HW7'))
+library(unmarked)
+
+#the count data
+y <- read.csv('Bobcat.csv')
+bob_mat <- as.matrix(y)
+
+#the detection variates
+p_covs <- read.csv('p covariates.csv')
+det_covs <- list(
+  people = data.frame(p_covs)
+)
+
+#site-level covariate
+site_covs <- read.csv('psi covariates.csv')
+
+occu_data <- unmarkedFrameOccu(y= bob_mat, siteCovs = site_covs, obsCovs = det_covs)
+```
+
+**Question 2**
+
+Fit the candidate set of models
+
+```{r}
+#intercept only model
+fit_ii <- occu(~1 ~1, data = occu_data)
+
+#model incorporating people covariate
+fit_pi <- occu(~people ~1, data =  occu_data)
+
+#model incoporating distrubance covariate
+fit_id <- occu(~1 ~Dist_5km, data = occu_data)
+
+#model incorporating both people and disturbance covariates
+fit_pd <- occu(~people ~Dist_5km, data = occu_data)
+
+#list of candidate models
+cand.set <- list(
+  B1 = fit_ii,
+  B2 = fit_pi,
+  B3 = fit_id,
+  B4 = fit_pd
+)
+```
+
+**Question 3**
+
+Perform  a model selection utilizing AIC. 
+
+```{r}
+library(AICcmodavg)
+models <- aictab(cand.set = cand.set,
+                 second.ord = F
+                 )
+models
+
+
+```
+Based on the model selection results, it would appear that the candidate model fitting disturbance and leaving the effect of people as intercept-only, is the top model and preferred choice. The AIC for this model (4461.01) was the smallest of any of the other candidate models, with the candidate including both disturbance and people a close second (4462.98). Both of these models had a delta_AIC of <2, meaning there is a higher degree of empirical support for these two models.  Some measure of model selection uncertainty exists between these two models, since both models have a delta_AIC of <2. Further model averaging could reduce this uncertainty.
+
+**Question 4**
+
+Average both the effect of people and disturbance over all the models.
+
+```{r}
+#calculated model weights
+w <- exp(-0.5 * models$Delta_AIC) / sum(exp(-0.5 * models$Delta_AIC))
+w
+#model-averaged estimates for effect of people over all models
+avgp <- c(0, coef(fit_pd)[4], 0, coef(fit_pi)[3])
+avgp
+
+#model averaged coefficient for people
+avg_peop <- sum(w * avgp)
+avg_peop
+
+#variance for effect of people
+vpeop <- c(0, vcov(fit_pd)[4, 4], 0, vcov(fit_pi)[3, 3])
+vpeop
+
+#unconditional variance for effect of people
+unc_peop <- sum(w * (vpeop + (avgp - avg_peop)^2))
+sqrt(unc_peop)
+
+#confidence intervals for effect of people
+lowp <- avg_peop - qnorm(0.975) * sqrt(unc_peop)
+lowp
+
+highp <- avg_peop + qnorm(0.975) * sqrt(unc_peop)
+highp
+
+#model-averaged estimates for effect of disturbance over all models
+avgd <- c(coef(fit_id)[2], coef(fit_pd)[2], 0, 0)
+avgd
+
+#model averaged coefficient for disturbance
+avg_dist <- sum(w * avgd)
+avg_dist
+
+#variance for effect of disturbance
+vdist <- c(vcov(fit_id)[2, 2], vcov(fit_pd)[2, 2], 0, 0)
+vdist
+unc_dist <- sum(w * (vdist + (avgd - avg_dist)^2))
+sqrt(unc_dist)
+
+#confidence intervals for effect of disturbance
+lowd <- avg_dist - qnorm(0.975) * sqrt(unc_dist)
+lowd
+
+highd <- avg_dist + qnorm(0.975) * sqrt(unc_dist)
+highd
+```
+The model averaged slope coefficients for the effect of people on detection is -0.01653469 with a 95% confidence interval of between -0.4061781 and 0.3731087.
+The model averaged slope coefficient for the effect of disturbance on occupancy is -23.65047 with a 95% confidence interval of between -33.006 and -14.29494.
+
+**Question 5**
+
+Plot model-averaged predictions of occupancy probability and detection probability. Average over all models and make predictions over the observed range of both variables. 
+
+```{r}
+#predictions of distance 
+dist_dat <- data.frame(Dist_5km = seq(from = min(site_covs$Dist_5km),
+                                to = max(site_covs$Dist_5km),
+                                length.out = 100)
+)
+
+dist_prd <- modavgPred(cand.set = cand.set,
+                       newdata = dist_dat,
+                       second.ord = F,
+                       parm.type = 'psi')
+plot(x = dist_dat$Dist_5km, y = dist_prd$mod.avg.pred,
+     ylab = 'Bobcat Occupancy Probability', 
+     xlab = 'range of observed disturbance over 5km area',
+     cex.axis = 1.5,
+     cex.lab = 1.5,
+     type = 'l');lines(y = dist_prd$lower.CL, x = dist_dat$Dist_5km, lty = 2); lines(y = dist_prd$upper.CL, x = dist_dat$Dist_5km, lty = 2)
+
+
+```
