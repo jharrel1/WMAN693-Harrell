@@ -1,0 +1,96 @@
+---
+title: "Homework 8"
+author: "Jacob Harrell"
+date: "4/27/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Question 1**
+
+First, fit an N-mixture model with the assumption that abundance is a funciton ofwetland size and type, and detection probability is a function of sky and time.
+
+```{r}
+#setwd(choose.dir('HW8'))
+library(unmarked)
+
+y <- read.csv('sosp_nmix.csv')
+sosp_mat <- as.matrix(y)
+
+p_covs <- read.csv('p_covs_nmix.csv')
+det_covs <- list(
+  sky = data.frame(sky.1 = factor(p_covs$sky.1),
+                   sky.2 = factor(p_covs$sky.2)),
+  time = data.frame(p_covs[, c('time.1', 'time.2')])
+)
+
+site_covs <- read.csv('n_covs_nmix.csv')
+site_covs$type <- factor(site_covs$type)
+
+sosp_data <- unmarkedFramePCount(y = sosp_mat,
+                                 siteCovs = site_covs,
+                                 obsCovs = det_covs)
+fit <- pcount(~ time + sky ~ size + type, data = sosp_data, K=100)
+
+```
+
+**Question 2**
+
+Write a function to calculate the sum of squared Pearson residuals from the fitted model.
+
+```{r}
+#estimate of occupancy
+fit_psi <- predict(fit, type = 'state')
+fit_psi$Predicted[1]
+
+#estimate of detection probability
+fit_p <- predict(fit, type = 'det')
+fit_p$Predicted[1]
+
+psi_p <- fit_psi$Predicted[1]*fit_p$Predicted[1]
+psi_p
+
+fitted(fit)
+chisqu <- sum((fitted(fit) - sosp_mat)^2 / (fitted(fit) * (1 - fitted(fit))))
+
+
+cs_func <- function(fit){
+  obs <- getY(fit@data)
+  ex <- fitted(fit)
+  ts <- (ex - obs)^2 / (ex * (1 - ex))
+  return(sum(ts))
+}
+cs_func(fit)
+```
+The sum of squared Pearson residuals from the fitted model is 4009.069.
+
+**Question 3**
+
+Using the parboot() function, simulate the distribution of the test statistic under the assumption that the fitted model is the data-generating model. Simulate 1000 values of the test statistic.
+
+```{r}
+sims <- parboot(object = fit, statistic = cs_func, nsim = 1000)
+```
+
+**Question 4**
+
+Plot the distribution of the simulated test statistic.
+
+```{r}
+hist(sims@t.star[,1],
+     xlab = 'sum of squared Pearson residuals',
+     main = 'Distribution of simulated test statistic',
+     cex.axis = 1.5, cex.lab = 1.5, cex.main = 1.5); 
+lines(x = rep(cs_func(fit), 2), 
+      y = c(0,1000),
+      col = 'red', 
+      lwd = 3)
+
+sum(sims@t.star[,1] > cs_func(fit)) / 1000
+sims
+```
+
+The null hypothesis that we were testing was that the model we had fitted earlier would also function as the data-generating model. In other words, the fitted model would be the model of "best fit" using the sum of squared Pearson residuals. In reviewing the results of the analysis, one could conclude that we would fail to reject the null hypothesis since, in using the sum of squared Pearson residuals, the Pr(t_B > t0) value is between .1 and 0.9 with a value of 0.1318681. This implies that the model is an adequate fit for the song sparrow data. 
