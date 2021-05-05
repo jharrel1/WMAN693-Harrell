@@ -1,0 +1,177 @@
+---
+title: "Final Exam"
+author: "Jacob Harrell"
+date: "5/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Question 1**
+
+Describe a sampling procedure that might give rise to this dataset.
+
+We have a study that includes 100 unique sites. 3 replicate surveys are conducted at each site. During each replicate survey, detection/non-detection is noted for the target species. Also, the detection covariates obscovs1 and obscov2 are recorded at each replicate survey. site covariates x1 and x2 are recorded one time per site. 
+
+**Question 2**
+
+Import data and fit an occupancy model with the assumption that detection probability is an additive function of obscov1 and 2, and that the occupancy probability is an additive function of x1 and x2.
+```{r}
+#setwd(choose.dir('FinalExam'))
+library(unmarked)
+
+y <- read.csv('detect.csv')
+det_mat <- as.matrix(y)
+
+site_covs <- read.csv('sitecovs.csv')
+
+obscov1 <- read.csv('obscovs1.csv')
+obscov2 <- read.csv('obscovs2.csv')
+det_covs <- list(
+  obscovs1 = obscov1,
+  obscovs2 = obscov2
+)
+
+occu_data <- unmarkedFrameOccu(y = det_mat,
+                               siteCovs  = site_covs,
+                               obsCovs = det_covs
+                               )
+
+fit <- occu(~ obscovs1 + obscovs2 ~ x1 + x2, data = occu_data)
+fit
+```
+
+**Question 3**
+
+Use contrasts to determine if occupancy probability is different when x1 = 2 vs x1 = -2
+
+```{r}
+cont_mat <- matrix(c(0, 2, 0), nrow = 1)
+b <- coef(fit)
+y <- matrix(b, ncol = 1)
+
+
+```
+
+**Question 4**
+
+Use model selection to compare 4 models. Which is model is the top model and why?
+
+```{r}
+fit_a <- occu(~ obscovs1 + obscovs2 ~ x1 + x2, data = occu_data)
+fit_b <- occu(~ obscovs1 + obscovs2 ~ x1, data = occu_data)
+fit_c <- occu(~ obscovs1 + obscovs2 ~ x2, data = occu_data)
+fit_d <- occu(~ obscovs1 + obscovs2 ~ 1, data = occu_data)
+
+library(AICcmodavg)
+mod_list <- list(m1 = fit_a,
+                 m2 = fit_b,
+                 m3 = fit_c,
+                 m4 = fit_d)
+aictab(mod_list, second.ord = F)
+```
+Based on the model selection process using AIC, model 3 which assumed that detection probability is an additive function of obscov1 and 2, and that the occupancy probability is a function of x2 was the best model. It had the lowest AIC value of the other models. However, model 1 was extremely close in its AIC score with that of model 3. These two models had a difference of only 0.29. It may be safe then to average these two models.
+
+**Question 5**
+
+Obtain model averaged estimates of x1. What conclusions can be made?
+
+```{r}
+modavgShrink(mod_list, 'x1', second.ord = F, parm.type = 'psi')
+```
+Based on the results, it would appear as if the 95% unconditional confidence intervals for x1 overlap 0. Therefore, it may be safe to assume that the coefficient x1 does not influence the occupancy probability in a statistically significant manner. 
+
+**Question 6**
+
+Plot model averaged predictions of how detection probability changes across the observed range of obscovs2.
+
+```{r}
+new_data <- data.frame(
+  obscovs1 = rep(0,100),
+  obscovs2 = seq(min(obscov2), max(obscov2), length.out = 100))
+
+
+obs2_pred <- modavgPred(mod_list, 
+                        newdata = new_data, 
+                        second.ord = T,
+                        parm.type = 'detect')
+plot(x = new_data$obscovs2, 
+     y = obs2_pred$mod.avg.pred, 
+     type = 'l', 
+     ylim = c(min(obs2_pred$lower.CL), max(obs2_pred$upper.CL)))
+lines(x = new_data$obscovs2, y = obs2_pred$lower.CL, lty = 2)
+lines(x = new_data$obscovs2, y = obs2_pred$upper.CL, lty = 2)
+```
+
+**Question 7**
+
+Evaluate top model using sum of squared Pearson's residual. 
+
+```{r}
+chisq <- function(mod){ # mod is fitted model
+obs <- getY(mod@data) # observed
+ex <- fitted(mod) # expected
+ts <- (ex - obs) ^ 2 / # chi-square statistic
+(ex * (1 - ex))
+return(sum(ts))
+}
+chisq(fit_c)
+
+sims <- parboot(object = fit_c, statistic = chisq, nsim = 1000)
+hist(sims@t.star[,1],
+     xlab = 'sum of squared Pearson residuals',
+     main = 'Distribution of simulated test statistic',
+     cex.axis = 1.5, cex.lab = 1.5, cex.main = 1.5); 
+lines(x = rep(chisq(fit_c), 2), 
+      y = c(0,1000),
+      col = 'red', 
+      lwd = 3)
+sum(sims@t.star[, 1] > chisq(fit_c)) / 1000
+```
+The test statistic falls just to the right of the middle of the distribution and so we may be able to conclude that this particular model may not be the "best fit" model using the Pearson residuals.  
+
+**Question 8**
+
+What is the closure assumption? What are the consequences of violating the closure assumption? Why would violating the closure assumption results in these consequences?
+
+The closure assumption is, in effect, that if a site is occupied during one survey, then we can assume that the target organism has been occupying the site across the rest of the surveys, even if the target organism had not been detected during every survey. Violating closure can result in underestimating the detection probability while also overestimating the occupancy probability.
+
+**Question 9**
+
+Assume you have variable p that is bounded between 0 and 1. Further, assume p = 0.25. What link function would be used to transform p to the real number line? What is the analogous value of p = 0.25 on the real number line?
+
+The inverse logit-link function would be used to transform p to the real number line. 
+```{r}
+p_real <- exp(0.25)/(1+exp(0.25))
+p_real
+```
+The analagous value of p = 0.25 on the real number line would be 0.5621765.
+
+**Question 10**
+
+Assume you have a random variable that can only obtain values of 0, 1, 2, ..., ∞. What probability distribution might you use to model such data? What is (are) the parameter(s) of this probability distribution? What link function might you use if you wanted to model that parameter as a linear function of variables?
+
+The Poisson distribution may be most applicable here. The parameter of this probability distribution is lambda > 0. In this case, we would use the inverse log link function. 
+```{r}
+
+```
+
+**Question 11**
+
+Discuss null hypothesis significance testing within the context of model checking.
+
+The null hypothesis would be that the fitted model is the data-generating model of "best fit". The sum of squared Pearson's residual is used as the test statistic in order to assess the null hypothesis. We would reject the null hypothesis if the  Pr(t_B > t0) value is outside the range of .1 and 0.9. MOdels within this range would imply best fit. 
+
+**Question 12**
+
+Interpret the coefficient β1.
+
+The coefficient beta_1 would be the change in y associated with a one-unit change in the variable x1. 
+
+**Question 13**
+
+How does the response variable change in response to a 1-unit change in x2?
+
+The effect of x2 on the response variable would be dependent on the value of x3. Therefore, in order to assess the change in y with a one-unit change in x2, we would also need to understand how the variable x3 interacts with x2. 
